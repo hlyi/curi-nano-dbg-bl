@@ -18,7 +18,8 @@ BOARD_REVISION_MINOR ?= 4
 VERSION_MAJOR = 1
 VERSION_MINOR = 1
 
-CROSS=arm-none-eabi-
+#CROSS=arm-none-eabi-
+CROSS=/opt/arm-gnu-toolchain-11.3/bin/arm-none-eabi-
 
 # Toolchain
 CC      = $(CROSS)gcc
@@ -121,7 +122,7 @@ $(TARGET_NAME).o: $(TARGET_ELF)
 
 clean:
 	$(RM) $(OBJS)
-	$(RM) $(TARGETS)
+	$(RM) $(TARGETS) $(TARGET_ELF)
 
 clobber: clean
 	$(RM) $(TARGETS)
