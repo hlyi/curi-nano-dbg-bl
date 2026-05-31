@@ -63,7 +63,7 @@ void noopFunction(void)
 	// Placeholder function for code that isn't needed. Keep empty!
 }
 
-void bootloader_main(void)
+inline static void bootloader_main(void)
 {
 
 	// Set up output pins.
@@ -123,14 +123,13 @@ bool flash_valid() {
 			&& ip <  0x00400000;
 }
 
-bool bootloader_sw_triggered(void)
-{
-	// Was reset caused by watchdog timer (WDT)?
-	return PM->RCAUSE.reg & PM_RCAUSE_WDT;
-}
+// FIXME
+//#define USE_BL_MUL_TAP
+//#define USE_BL_APP_TRG
+#define USE_BL_BUTTON_PRESS
 
-
-bool button_pressed(void)
+#ifdef USE_BL_BUTTON_PRESS
+inline static bool button_pressed(void)
 {
 	// Configure PROGRAM button
 #if ((_BOARD_REVISION_MAJOR_ == 0) && (_BOARD_REVISION_MINOR_ < 6))
@@ -148,13 +147,56 @@ bool button_pressed(void)
 
 	return false;
 }
+#endif
 
+#if defined(USE_BL_MUL_TAP) || defined(USE_BL_APP_TRG)
+//  #define MUL_TAP_MAGIC 0xf02669ef7fc2f1dcULL
+//  #define APP_TRG_MAGIC 0xd7582bbdaab6da5bULL
+//  static volatile uint64_t __attribute__((section(".bootloader_magic"))) bl_magic_val;
+  #define MUL_TAP_MAGIC 0xf02669efUL
+  #define APP_TRG_MAGIC 0xd7582bbdUL
+  static volatile uint32_t __attribute__((section(".bootloader_magic"))) bl_magic_val;
+  static volatile uint32_t tap_count;
+#endif
 
+#ifdef USE_BL_APP_TRG
+inline static bool software_trigger(void)
+{
+	return bl_magic_val == APP_TRG_MAGIC;
+}
+#endif
 
+#ifdef USE_BL_MUL_TAP
+inline static bool multi_tap_reset(void)
+{
+	if ( bl_magic_val == MUL_TAP_MAGIC) {
+		tap_count ++;
+	}else {
+		bl_magic_val = MUL_TAP_MAGIC;
+		tap_count = 0;
+	}
+	volatile int wait = 65536; while (wait--);
+	return tap_count > 0;
+}
+#endif
 
 void main_bl(void) {
 	uint32_t reason = PM->RCAUSE.reg;
-	if (!flash_valid() || (reason & PM_RCAUSE_WDT) || ((reason & PM_RCAUSE_POR) && button_pressed())) {
+	if ( 0 
+	  || !flash_valid()
+#ifdef USE_BL_APP_TRG
+          || ((reason & PM_RCAUSE_SYST) && software_trigger())
+#endif
+#ifdef USE_BL_MUL_TAP	
+	  || ((reason & PM_RCAUSE_EXT) && multi_tap_reset())
+#endif
+#ifdef USE_BL_BUTTON_PRESS
+	  || ((reason & PM_RCAUSE_POR) && button_pressed())
+#endif
+	) {
+#if defined(USE_BL_MUL_TAP) || defined(USE_BL_APP_TRG)
+		bl_magic_val = 0;
+#endif
 		bootloader_main();
 	}
 

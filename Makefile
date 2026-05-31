@@ -121,6 +121,7 @@ $(TARGET_NAME).o: $(TARGET_ELF)
 
 clean:
 	$(RM) $(OBJS)
+	$(RM) $(TARGETS)
 
 clobber: clean
 	$(RM) $(TARGETS)

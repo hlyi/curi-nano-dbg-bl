@@ -135,6 +135,11 @@ SECTIONS
     } > rom
     PROVIDE_HIDDEN (__exidx_end = .);
 
+    .dont_move_block (NOLOAD): ALIGN(4)
+    {
+       *(.bootloader_magic)
+    } > ram
+
     . = ALIGN(4);
     _etext = .;
 
