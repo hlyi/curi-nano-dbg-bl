@@ -119,6 +119,7 @@ $(TARGET_NAME).o: $(TARGET_ELF)
 				$(TARGET_ELF) $@
 	$(OBJDUMP) -h $@
 	$(SIZE) -Ax $@
+	$(SIZE) $(TARGET_ELF)
 
 clean:
 	$(RM) $(OBJS)
